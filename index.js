@@ -41,10 +41,25 @@ const runWithTimeout = async (fnOrPromise, millis, message) => {
   ])
 }
 
+const settle = promise => promise.then(value => ({
+    isFulfilled: true,
+    isRejected: false,
+    value
+  }))
+  .catch(reason => ({
+    isFulfilled: false,
+    isRejected: true,
+    reason
+  }))
+
+const allSettled = promises => Promise.all(promises.map(settle))
+
 module.exports = {
   isPromise,
   cancelableTimeout,
   wait,
   timeoutIn,
   runWithTimeout,
+  settle,
+  allSettled,
 }
