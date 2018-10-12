@@ -4,6 +4,7 @@ const {
   wait,
   timeoutIn,
   runWithTimeout,
+  memoize,
 } = require('./')
 
 test('wait', async t => {
@@ -74,5 +75,55 @@ test('runWithTimeout throws on timeout', async t => {
     t.ok(/timed out/.test(err.message))
   }
 
+  t.end()
+})
+
+test('memoize (simple)', async t => {
+  const fn = (() => {
+    let counter = 0
+    return async () => {
+      if (counter++ % 2) throw new Error('odd!')
+      return counter
+    }
+  })()
+
+  const count = memoize(fn, {
+    cacheKey: () => 1
+  })
+
+  t.equal(await count(), 1)
+  t.equal(await count(), 1, 'memoized')
+  t.equal(await count(123), 1, 'respects cacheKey')
+  t.end()
+})
+
+test('memoize', async t => {
+  const evilEcho = (() => {
+    let evil = true
+    return async a => {
+      evil = !evil
+      if (evil) throw new Error('haha!')
+      return a
+    }
+  })()
+
+  const echo = memoize(evilEcho, {
+    cacheKey: arg => arg
+  })
+
+  // evil is false
+  t.equal(await echo('hey'), 'hey')
+  // evil is cached as false
+  t.equal(await echo('hey'), 'hey', 'memoized')
+  try {
+    // evil is true
+    await echo('ho')
+    t.fail('expected error')
+  } catch (err) {
+    t.ok(err)
+  }
+
+  // evil is false (not cached cause of rejection)
+  t.equal(await echo('ho'), 'ho', 'rejections are not cached')
   t.end()
 })

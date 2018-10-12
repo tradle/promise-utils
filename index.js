@@ -54,6 +54,25 @@ const settle = promise => promise.then(value => ({
 
 const allSettled = promises => Promise.all(promises.map(settle))
 
+const memoize = (fn, { cacheKey }) => {
+  const cache = new Map()
+  const memoized = async function (...args) {
+    const key = cacheKey(...args)
+    if (cache.has(key)) {
+      return cache.get(key)
+    }
+
+    // eslint-disable-next-line no-invalid-this
+    const promise = fn.apply(this, args)
+    cache.set(key, promise)
+    promise.catch(() => cache.delete(key))
+    return promise
+  }
+
+  memoized.clear = () => cache.clear()
+  return memoized
+}
+
 module.exports = {
   isPromise,
   cancelableTimeout,
@@ -62,4 +81,5 @@ module.exports = {
   runWithTimeout,
   settle,
   allSettled,
+  memoize,
 }
