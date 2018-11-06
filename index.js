@@ -124,6 +124,47 @@ const map = async (arr, mapper, opts={}) => new Promise((resolve, reject) => {
 })
 
 const mapSeries = (arr, mapper) => map(arr, mapper, { concurrency: 1 })
+const settleMap = async (data, fn) => allSettled(data.map(item => fn(item)))
+const settleSeries = (data, fn) => mapSeries(data, async item => settle(fn(item)))
+
+const chunk = (arr, chunkSize) => {
+  if (!(chunkSize > 0)) throw new Error('expected chunk size > 0')
+
+  const chunks = []
+  let offset = 0
+  while (offset < arr.length) {
+    chunks.push(arr.slice(offset, offset + chunkSize))
+    offset += chunkSize
+  }
+
+  if (offset < arr.length) {
+    chunks.push(arr.slice(offset))
+  }
+
+  return chunks
+}
+
+const flatten = arr => arr.reduce((all, some) => all.concat(some), [])
+
+const batchProcess = async ({
+  data,
+  batchSize=1,
+  processOne,
+  processBatch,
+  settle
+}) => {
+  const batches = chunk(data, batchSize)
+  const batchResolver = settle ? settleMap : map
+  const results = await mapSeries(batches, (batch, i) => {
+    if (processBatch) {
+      return processBatch(batch, i)
+    }
+
+    return batchResolver(batch, (one, j) => processOne(one, i * batchSize + j))
+  })
+
+  return flatten(results)
+}
 
 module.exports = {
   isPromise,
@@ -133,7 +174,13 @@ module.exports = {
   runWithTimeout,
   settle,
   allSettled,
+  settleMap,
+  settleSeries,
   memoize,
   map,
   mapSeries,
+  batchProcess,
+  // not promise utils but might as well export
+  chunk,
+  flatten,
 }
