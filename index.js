@@ -1,3 +1,4 @@
+const RESOLVED_PROMISE = Promise.resolve()
 const isPromise = obj => obj &&
   typeof obj.then === 'function' &&
   typeof obj.catch === 'function'
@@ -73,6 +74,57 @@ const memoize = (fn, { cacheKey }) => {
   return memoized
 }
 
+const map = async (arr, mapper, opts={}) => new Promise((resolve, reject) => {
+  const concurrency = 'concurrency' in opts ? opts.concurrency : Infinity
+  if (typeof concurrency !== 'number' ||
+    concurrency <= 0 ||
+    Math.floor(concurrency) !== concurrency) {
+    throw new TypeError(`expected "concurrency" to be a positive integer`)
+  }
+
+  const count = arr.length
+  const pending = []
+  const results = new Array(count)
+
+  let doneCount = 0
+  let itemIndex = 0
+  let failed
+  const next = () => {
+    if (!pending.length && doneCount === count) {
+      resolve(results)
+      return
+    }
+
+    if (failed ||
+      itemIndex === count ||
+      pending.length === concurrency ||
+      pending.length === count) return
+
+    const resultIndex = itemIndex++
+    const promise = RESOLVED_PROMISE.then(() => mapper(arr[resultIndex], resultIndex))
+    pending.push(promise)
+    promise
+      .then(result => {
+        doneCount++
+        if (typeof result !== 'undefined') {
+          results[resultIndex] = result
+        }
+
+        pending.shift()
+        next()
+      }, err => {
+        failed = true
+        reject(err)
+      })
+
+    next()
+  }
+
+  next()
+})
+
+const mapSeries = (arr, mapper) => map(arr, mapper, { concurrency: 1 })
+
 module.exports = {
   isPromise,
   cancelableTimeout,
@@ -82,4 +134,6 @@ module.exports = {
   settle,
   allSettled,
   memoize,
+  map,
+  mapSeries,
 }
