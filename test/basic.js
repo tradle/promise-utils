@@ -5,7 +5,7 @@ const {
   timeoutIn,
   runWithTimeout,
   memoize,
-} = require('./')
+} = require('../')
 
 test('wait', async t => {
   const now = Date.now()

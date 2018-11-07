@@ -2,10 +2,10 @@
 // https://github.com/sindresorhus/p-map/blob/master/test.js
 
 const test = require('tape')
-const { isPromise, map } = require('./')
+const { isPromise, map } = require('../')
 const randomInt = (min=0, max) => min + Math.floor(Math.random(max - min))
 const input = [
-  [10, 300],
+  Promise.resolve([10, 300]),
   [20, 100],
   [30, 200]
 ]

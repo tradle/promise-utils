@@ -4,7 +4,7 @@
   "description": "common promise-based flow helpers",
   "main": "index.js",
   "scripts": {
-    "test": "node test && node test-map",
+    "test": "tape test/*.js",
     "lint": "eslint --quiet --ignore-path .gitignore .",
     "precommit": "npm run lint && npm test"
   },

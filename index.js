@@ -1,4 +1,3 @@
-const RESOLVED_PROMISE = Promise.resolve()
 const isPromise = obj => obj &&
   typeof obj.then === 'function' &&
   typeof obj.catch === 'function'
@@ -88,7 +87,7 @@ const map = async (arr, mapper, opts={ concurrency: Infinity }) => new Promise((
   let itemIndex = 0
   let failed
   const next = () => {
-    if (!pending.length && doneCount === count) {
+    if (doneCount === count) {
       resolve(results)
       return
     }
@@ -99,9 +98,10 @@ const map = async (arr, mapper, opts={ concurrency: Infinity }) => new Promise((
       pending.length === count) return
 
     const resultIndex = itemIndex++
-    const promise = RESOLVED_PROMISE.then(() => mapper(arr[resultIndex], resultIndex))
-    pending.push(promise)
-    promise
+    const promise = Promise
+      // support promise for values as items in array, a la p-map (but do we really need to?)
+      .resolve(arr[resultIndex])
+      .then(item => mapper(item, resultIndex))
       .then(result => {
         doneCount++
         if (typeof result !== 'undefined') {
@@ -115,6 +115,7 @@ const map = async (arr, mapper, opts={ concurrency: Infinity }) => new Promise((
         reject(err)
       })
 
+    pending.push(promise)
     next()
   }
 
