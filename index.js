@@ -74,11 +74,9 @@ const memoize = (fn, { cacheKey }) => {
   return memoized
 }
 
-const map = async (arr, mapper, opts={}) => new Promise((resolve, reject) => {
-  const concurrency = 'concurrency' in opts ? opts.concurrency : Infinity
-  if (typeof concurrency !== 'number' ||
-    concurrency <= 0 ||
-    Math.floor(concurrency) !== concurrency) {
+const map = async (arr, mapper, opts={ concurrency: Infinity }) => new Promise((resolve, reject) => {
+  const { concurrency } = opts
+  if (!(concurrency > 0)) {
     throw new TypeError(`expected "concurrency" to be a positive integer`)
   }
 
