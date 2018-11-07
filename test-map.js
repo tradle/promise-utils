@@ -6,8 +6,8 @@ const { isPromise, map } = require('./')
 const randomInt = (min=0, max) => min + Math.floor(Math.random(max - min))
 const input = [
   [10, 300],
-  [20, 200],
-  [30, 100]
+  [20, 100],
+  [30, 200]
 ]
 
 const delay = millis => new Promise(resolve => setTimeout(resolve, millis))
